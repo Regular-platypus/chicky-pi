@@ -18,10 +18,6 @@ from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS as KeyboardLayout
 from adafruit_hid.keycode import Keycode
 
-# uncomment these lines for non_US keyboards
-# replace LANG with appropriate language
-#from keyboard_layout_win_LANG import KeyboardLayout
-#from keycode_win_LANG import Keycode
 
 duckyCommands = {
     'WINDOWS': Keycode.WINDOWS, 'GUI': Keycode.GUI,
@@ -106,9 +102,9 @@ layout = KeyboardLayout(kbd)
 
 
 
-
-
 def getProgrammingStatus():
+    # check GP0 for setup mode
+    # see setup mode for instructions
     progStatusPin = digitalio.DigitalInOut(GP0)
     progStatusPin.switch_to_input(pull=digitalio.Pull.UP)
     progStatus = not progStatusPin.value
@@ -128,7 +124,6 @@ def runScript(file):
             line = line.rstrip()
             if(line[0:6] == "REPEAT"):
                 for i in range(int(line[7:])):
-                    #repeat the last command
                     parseLine(previousLine)
                     time.sleep(float(defaultDelay)/1000)
             else:
@@ -139,13 +134,33 @@ def runScript(file):
         print("Unable to open file ", file)
 
 def selectPayload():
-    global payload1Pin, payload2Pin, payload3Pin, payload4Pin
     payload = "payload.dd"
-
-
     return payload
 
+async def blink_led(led):
+    print("Blink")
+    if(board.board_id == 'raspberry_pi_pico'):
+        blink_pico_led(led)
+    elif(board.board_id == 'raspberry_pi_pico_w'):
+        blink_pico_w_led(led)
 
+async def blink_pico_led(led):
+    print("starting blink_pico_led")
+    led_state = False
+    while True:
+        if led_state:
+            for i in range(100):
+                if i < 50:
+                    led.duty_cycle = int(i * 2 * 65535 / 100)  # Up
+                await asyncio.sleep(0.01)
+            led_state = False
+        else:
+            for i in range(100):
+                if i >= 50:
+                    led.duty_cycle = 65535 - int((i - 50) * 2 * 65535 / 100)
+                await asyncio.sleep(0.01)
+            led_state = True
+        await asyncio.sleep(0)
 
 async def blink_pico_w_led(led):
     print("starting blink_pico_w_led")
