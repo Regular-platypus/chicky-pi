@@ -8,10 +8,15 @@ import wifi
 
 time.sleep(.5)
 
-
-supervisor.runtime.autoreload = False
-led = digitalio.DigitalInOut(board.LED)
-led.switch_to_output()
+def startWiFi():
+    import ipaddress
+    try:
+        from secrets import secrets
+    except ImportError:
+        raise
+    wifi.radio.start_ap(secrets['ssid'],secrets['password'])
+    HOST = repr(wifi.radio.ipv4_address_ap)
+    PORT = 80
 
 progStatus = False
 progStatus = getProgrammingStatus()
@@ -20,5 +25,5 @@ if(progStatus == False):
     payload = selectPayload()
     runScript(payload)
 else:
-    print("")
+    print("no payload")
 
